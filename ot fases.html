@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proyecto SCADA OT - Resumen por Fases</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Proyecto SCADA / OT Industrial</h1>
+  <p>Resumen completo por fases del laboratorio desarrollado en Packet Tracer</p>
+</header>
+
+<div class="container">
+/* FASES 1 */
+  <div class="fase">
+    <h2>FASE 1 - Diseño inicial de la red SCADA</h2>
+    <p>En esta fase se construyó la topología básica del entorno SCADA industrial.</p>
+
+    <ul>
+      <li>Creación del router principal.</li>
+      <li>Creación del switch industrial.</li>
+      <li>Conexión de servidor SCADA.</li>
+      <li>Conexión de HMIs.</li>
+      <li>Conexión de PCs simulando PLCs.</li>
+      <li>Diseño de arquitectura OT básica.</li>
+    </ul>
+  </div>
+  <div class="fase">
+      <h2>Configuraciones Técnicas - FASE 1</h2>
+
+      <h3>Topología Física</h3>
+      <ul>
+        <li>Router Principal conectado al Switch por Fa0/1.</li>
+        <li>Servidor conectado a Fa0/5.</li>
+        <li>HMIs conectadas en Fa0/10 - Fa0/12.</li>
+        <li>PLCs conectados en Fa0/15 - Fa0/18.</li>
+      </ul>
+
+      <h3>Configuración Router Principal</h3>
+
+      <pre>
+enable
+configure terminal
+
+interface gig0/0
+no shutdown
+
+interface gig0/1
+ip address 200.0.0.1 255.255.255.0
+no shutdown
+      </pre>
+
+      <h3>Configuración Servidor Principal</h3>
+
+      <pre>
+IP Address:      192.168.10.10
+Subnet Mask:     255.255.255.0
+Default Gateway: 192.168.10.1
+DNS Server:      192.168.10.10
+      </pre>
+    </div>
+/* FASES 2 */
+  <div class="fase">
+    <h2>FASE 2 - Segmentación mediante VLANs</h2>
+
+    <p>Se segmentó la red industrial usando VLANs para separar dispositivos críticos.</p>
+
+    <table>
+      <tr>
+        <th>VLAN</th>
+        <th>Red</th>
+        <th>Uso</th>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>192.168.10.0</td>
+        <td>Servidores SCADA</td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td>192.168.20.0</td>
+        <td>HMI</td>
+      </tr>
+      <tr>
+        <td>30</td>
+        <td>192.168.30.0</td>
+        <td>PLC</td>
+      </tr>
+      <tr>
+        <td>40</td>
+        <td>192.168.40.0</td>
+        <td>PC Ingeniería</td>
+      </tr>
+    </table>
+
+    <h3>Distribución de puertos</h3>
+
+    <table>
+      <tr>
+        <th>Puerto</th>
+        <th>Uso</th>
+      </tr>
+      <tr>
+        <td>Fa0/1</td>
+        <td>Trunk hacia Router</td>
+      </tr>
+      <tr>
+        <td>Fa0/5 - Fa0/9</td>
+        <td>Servidores SCADA</td>
+      </tr>
+      <tr>
+        <td>Fa0/10 - Fa0/14</td>
+        <td>HMI</td>
+      </tr>
+      <tr>
+        <td>Fa0/15 - Fa0/22</td>
+        <td>PLC</td>
+      </tr>
+    </table>
+  </div>
+  <div class="fase">
+      <h2>Configuraciones Técnicas - FASE 2</h2>
+
+      <h3>Creación de VLANs</h3>
+
+      <pre>
+enable
+configure terminal
+
+vlan 10
+name SCADA
+
+vlan 20
+name HMI
+
+vlan 30
+name PLC
+
+vlan 40
+name INGENIERIA
+      </pre>
+
+      <h3>Asignación de Puertos</h3>
+
+      <pre>
+interface fa0/5
+switchport mode access
+switchport access vlan 10
+
+interface range fa0/10-12
+switchport mode access
+switchport access vlan 20
+
+interface range fa0/15-18
+switchport mode access
+switchport access vlan 30
+
+interface fa0/19
+switchport mode access
+switchport access vlan 40
+      </pre>
+
+      <h3>Configuración Trunk</h3>
+
+      <pre>
+interface fa0/1
+switchport mode trunk
+      </pre>
+    </div>
+    /* FASES 3 */
+  <div class="fase">
+    <h2>FASE 3 - Router-on-a-Stick + ACL Industrial</h2>
+
+    <p>Se configuró inter-VLAN Routing utilizando Router-on-a-Stick.</p>
+
+    <h3>Subinterfaces configuradas</h3>
+
+    <ul>
+      <li><code>gig0/0.10</code> → 192.168.10.1</li>
+      <li><code>gig0/0.20</code> → 192.168.20.1</li>
+      <li><code>gig0/0.30</code> → 192.168.30.1</li>
+      <li><code>gig0/0.40</code> → 192.168.40.1</li>
+    </ul>
+
+    <p>Luego se implementaron ACLs industriales.</p>
+
+    <h3>Objetivo de la ACL</h3>
+
+    <ul>
+      <li>Permitir HMI → PLC.</li>
+      <li>Permitir HMI → SCADA.</li>
+      <li>Bloquear PLC → HMI.</li>
+      <li>Bloquear PLC → SCADA.</li>
+    </ul>
+
+    <p>Esto simula políticas reales de ciberseguridad OT.</p>
+  </div>
+  <div class="fase">
+      <h2>Configuraciones Técnicas - FASE 3</h2>
+
+      <h3>Router-on-a-Stick</h3>
+
+      <pre>
+interface gig0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+
+interface gig0/0.20
+encapsulation dot1Q 20
+ip address 192.168.20.1 255.255.255.0
+
+interface gig0/0.30
+encapsulation dot1Q 30
+ip address 192.168.30.1 255.255.255.0
+
+interface gig0/0.40
+encapsulation dot1Q 40
+ip address 192.168.40.1 255.255.255.0
+      </pre>
+
+      <h3>ACL Industrial</h3>
+
+      <pre>
+ip access-list extended CONTROL_PLC
+
+deny ip 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255
+
+deny ip 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255
+
+permit ip any any
+
+interface gig0/0.30
+ip access-group CONTROL_PLC in
+      </pre>
+    </div>
+/*Fase 4*/
+  <div class="fase">
+    <h2>FASE 4 - Separación IT / OT + DMZ Industrial</h2>
+
+    <p>Se construyó una arquitectura basada en ISA-95 separando IT y OT.</p>
+
+    <table>
+      <tr>
+        <th>Zona</th>
+        <th>VLAN</th>
+        <th>Red</th>
+      </tr>
+      <tr>
+        <td>OT</td>
+        <td>10,20,30,40</td>
+        <td>192.168.X.0</td>
+      </tr>
+      <tr>
+        <td>DMZ</td>
+        <td>50</td>
+        <td>192.168.50.0</td>
+      </tr>
+      <tr>
+        <td>IT</td>
+        <td>60</td>
+        <td>172.16.0.0</td>
+      </tr>
+    </table>
+
+    <h3>Elementos agregados</h3>
+
+    <ul>
+      <li>Servidor DMZ.</li>
+      <li>PC corporativa IT.</li>
+      <li>Firewall OT mediante ACL.</li>
+      <li>Bloqueo IT → PLC.</li>
+      <li>Bloqueo IT → SCADA.</li>
+      <li>Permitir IT → DMZ.</li>
+    </ul>
+  </div>
+  <div class="fase">
+      <h2>Configuraciones Técnicas - FASE 4</h2>
+
+      <h3>Creación VLAN DMZ e IT</h3>
+
+      <pre>
+vlan 50
+name DMZ_INDUSTRIAL
+
+vlan 60
+name RED_IT
+      </pre>
+
+      <h3>Asignación de Puertos</h3>
+
+      <pre>
+interface fa0/21
+switchport mode access
+switchport access vlan 50
+
+interface fa0/22
+switchport mode access
+switchport access vlan 60
+      </pre>
+
+      <h3>Subinterfaces Router</h3>
+
+      <pre>
+interface gig0/0.50
+encapsulation dot1Q 50
+ip address 192.168.50.1 255.255.255.0
+
+interface gig0/0.60
+encapsulation dot1Q 60
+ip address 172.16.0.1 255.255.255.0
+      </pre>
+
+      <h3>Firewall Industrial ACL</h3>
+
+      <pre>
+ip access-list extended FIREWALL_OT
+
+deny ip 172.16.0.0 0.0.0.255 192.168.30.0 0.0.0.255
+
+deny ip 172.16.0.0 0.0.0.255 192.168.10.0 0.0.0.255
+
+permit ip 172.16.0.0 0.0.0.255 192.168.50.0 0.0.0.255
+
+permit ip any any
+
+interface gig0/1
+ip access-group FIREWALL_OT in
+      </pre>
+    </div>
+/* FASES 5 */
+  <div class="fase">
+    <h2>FASE 5 - Redundancia de servidores SCADA</h2>
+
+    <p>Se implementó redundancia básica de servidores industriales.</p>
+
+    <table>
+      <tr>
+        <th>Servidor</th>
+        <th>IP</th>
+        <th>Rol</th>
+      </tr>
+      <tr>
+        <td>SCADA Principal</td>
+        <td>192.168.10.10</td>
+        <td>Servidor Principal</td>
+      </tr>
+      <tr>
+        <td>SCADA Backup</td>
+        <td>192.168.10.11</td>
+        <td>Servidor de Respaldo</td>
+      </tr>
+    </table>
+
+    <h3>Funciones implementadas</h3>
+
+    <ul>
+      <li>DNS redundante.</li>
+      <li>Dominio <code>empresa.local</code>.</li>
+      <li>Pruebas de conectividad.</li>
+      <li>Pruebas de caída del servidor principal.</li>
+      <li>Simulación de alta disponibilidad.</li>
+    </ul>
+  </div>
+  <div class="fase">
+      <h2>Configuraciones Técnicas - FASE 5</h2>
+
+      <h3>Servidor SCADA Backup</h3>
+
+      <pre>
+IP Address:      192.168.10.11
+Subnet Mask:     255.255.255.0
+Default Gateway: 192.168.10.1
+DNS Server:      192.168.10.10
+      </pre>
+
+      <h3>Configuración DNS Backup</h3>
+
+      <pre>
+Domain: empresa.local
+
+Registro 1:
+empresa.local -> 192.168.10.10
+
+Registro 2:
+empresa.local -> 192.168.10.11
+      </pre>
+
+      <h3>Pruebas Realizadas</h3>
+
+      <ul>
+        <li>Ping entre servidor principal y backup.</li>
+        <li>Ping desde HMIs a servidores.</li>
+        <li>Prueba de caída del servidor principal.</li>
+        <li>Prueba de resolución DNS.</li>
+      </ul>
+    </div>
+/*Resumen*/
+  <div class="fase">
+    <h2>Resumen General del Proyecto</h2>
+
+    <ul>
+      <li>✔ Arquitectura SCADA industrial.</li>
+      <li>✔ Segmentación OT mediante VLANs.</li>
+      <li>✔ Router-on-a-Stick.</li>
+      <li>✔ ACL industriales.</li>
+      <li>✔ Firewall OT.</li>
+      <li>✔ Separación IT / OT.</li>
+      <li>✔ Zona DMZ industrial.</li>
+      <li>✔ DNS industrial.</li>
+      <li>✔ Redundancia de servidores.</li>
+      <li>✔ Simulación de ciberseguridad OT.</li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>
+  Proyecto SCADA / OT Industrial - Packet Tracer<br>
+  Elaborado como práctica de arquitectura industrial y ciberseguridad OT.
+</footer>
+
+
+
+</body>
+</html>
